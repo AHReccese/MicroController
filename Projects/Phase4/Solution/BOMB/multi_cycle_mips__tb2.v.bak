@@ -1,0 +1,43 @@
+
+`timescale 1ns/1ns
+
+module multi_cycle_mips__tb2;
+
+   reg clk = 1;
+   always @(clk)
+      clk <= #5 ~clk;
+
+   reg reset;
+   initial begin
+      reset = 1;
+      @(posedge clk);
+      @(posedge clk);
+      @(posedge clk);
+      #1;
+      reset = 0;
+   end
+
+   initial
+      $readmemh("TB2.hex", ACA_MIPS.Instruction_Memory.mem_data);
+
+   parameter end_pc = 32'h40;
+
+   integer i;
+   always @(ACA_MIPS.PCF)
+      if(ACA_MIPS.PCF == end_pc) begin
+         for(i=0; i<1000; i=i+1) begin
+            $write("%x ", ACA_MIPS.Data_Memory.mem_data[i]);
+            if(((i+1) % 16) == 0)
+               $write("\n");
+         end
+         $stop;
+      end
+
+  Top_Ph3  ACA_MIPS(
+      .clk(clk),
+      .reset(reset)
+   );
+
+
+endmodule
+

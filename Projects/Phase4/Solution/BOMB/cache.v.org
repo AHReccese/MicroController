@@ -1,0 +1,51 @@
+module cache(input clk, reset, writeD, writeM,
+			input [31:0] AdrD, writeAdrM, writeDataD, writeDataM0, writeDataM1, writeDataM2, writeDataM3, writeDataM4, writeDataM5, writeDataM6, writeDataM7,
+			output hit,
+			output [31:0] readData);
+	
+	
+	wire [25:0] setTag;
+	wire setOffset;
+	
+	reg [31:0] cacheData [15:0];
+	reg [25:0] cacheTag [1:0];
+	reg cacheValid [1:0];
+	
+	// offset and tag from address ( when memory wants to read in cache )
+	assign setOffset = writeAdrM[5];	
+	assign setTag = writeAdrM[31:6];
+
+	// hit 
+	assign hit = cacheValid[AdrD[5]] & (AdrD[31:6] == cacheTag[AdrD[5]]);
+	
+	
+	always @(posedge clk)
+	begin
+		if(reset)
+			begin
+				cacheValid[0] <= 0;
+				cacheValid[1] <= 0;
+			end
+		else if(writeM)
+			begin
+				cacheValid[setOffset] <= 1'b1;
+				cacheTag[setOffset] <= setTag;
+				
+				cacheData[{setOffset, 3'b000}] <= writeDataM0;
+				cacheData[{setOffset, 3'b001}] <= writeDataM1;
+				cacheData[{setOffset, 3'b010}] <= writeDataM2;
+				cacheData[{setOffset, 3'b011}] <= writeDataM3;
+				cacheData[{setOffset, 3'b100}] <= writeDataM4;
+				cacheData[{setOffset, 3'b101}] <= writeDataM5;
+				cacheData[{setOffset, 3'b110}] <= writeDataM6;
+				cacheData[{setOffset, 3'b111}] <= writeDataM7;
+			end
+		else if(writeD && hit)
+			cacheData[AdrD[5:2]] <= writeDataD;
+	end
+		
+	assign readData = cacheData[AdrD[5:2]];
+	
+	
+endmodule
+
